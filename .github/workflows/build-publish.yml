@@ -1,0 +1,98 @@
+name: Build and Publish Release
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
+
+    - name: Set up Go
+      uses: actions/setup-go@v2
+      with:
+        go-version: 1.21
+
+    - name: Build for Linux AMD64
+      run: |
+        GOOS=linux GOARCH=amd64 go build -ldflags "-X main.Version=${{ env.VERSION }}" -o rke2-k3s-bootstrap-decryptor-linux-amd64
+      env:
+        GO111MODULE: "on"
+        VERSION: ${{ env.VERSION }}
+
+    - name: Build for Linux ARM64
+      run: |
+        GOOS=linux GOARCH=arm64 go build -ldflags "-X main.Version=${{ env.VERSION }}" -o rke2-k3s-bootstrap-decryptor-linux-arm64
+      env:
+        GO111MODULE: "on"
+        VERSION: ${{ env.VERSION }}
+
+    - name: Build for macOS Intel
+      run: |
+        GOOS=darwin GOARCH=amd64 go build -ldflags "-X main.Version=${{ env.VERSION }}" -o rke2-k3s-bootstrap-decryptor-macos-amd64
+      env:
+        GO111MODULE: "on"
+        VERSION: ${{ env.VERSION }}
+
+    - name: Build for macOS ARM64 (M1/2)
+      run: |
+        GOOS=darwin GOARCH=arm64 go build -ldflags "-X main.Version=${{ env.VERSION }}" -o rke2-k3s-bootstrap-decryptor-macos-arm64
+      env:
+        GO111MODULE: "on"
+        VERSION: ${{ env.VERSION }}
+
+    - name: Create Draft Release
+      id: create_release
+      uses: actions/create-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: v1.0.0
+        release_name: Release v1.0.0
+        draft: true
+        prerelease: false
+
+    - name: Upload Linux AMD64 Asset
+      uses: actions/upload-release-asset@v1.0.1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: ./rke2-k3s-bootstrap-decryptor-linux-amd64
+        asset_name: rke2-k3s-bootstrap-decryptor-linux-amd64
+        asset_content_type: application/octet-stream
+
+    - name: Upload Linux ARM64 Asset
+      uses: actions/upload-release-asset@v1.0.1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: ./rke2-k3s-bootstrap-decryptor-linux-arm64
+        asset_name: rke2-k3s-bootstrap-decryptor-linux-arm64
+        asset_content_type: application/octet-stream
+
+    - name: Upload macOS Intel Asset
+      uses: actions/upload-release-asset@v1.0.1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: ./rke2-k3s-bootstrap-decryptor-macos-amd64
+        asset_name: rke2-k3s-bootstrap-decryptor-macos-amd64
+        asset_content_type: application/octet-stream
+
+    - name: Upload macOS ARM64 Asset
+      uses: actions/upload-release-asset@v1.0.1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: ./rke2-k3s-bootstrap-decryptor-macos-arm64
+        asset_name: rke2-k3s-bootstrap-decryptor-macos-arm64
+        asset_content_type: application/octet-stream
